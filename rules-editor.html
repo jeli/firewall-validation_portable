@@ -1,0 +1,654 @@
+<!--
+    Firewall-Validation Portable - Regel-Editor
+    Copyright (C) 2026 Christian Jelitte <christian.jelitte@gmx-topmail.de>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+    Additional term under section 7(b) of the GNU GPL version 3:
+    the author attribution must be preserved in every copy and every
+    modified version, see the file NOTICE.
+-->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regel-Editor – Firewall-Validation Portable</title>
+<style>
+:root{--ink:#0f172a;--ink-2:#1e293b;--paper:#f1f5f9;--card:#fff;--line:#e2e8f0;--text:#1e293b;--muted:#64748b;--accent:#0d9488;--accent-2:#0f766e;
+  --sev-critical:#9f1239;--sev-high:#c2410c;--sev-medium:#b45309;--sev-low:#1d4ed8;--sev-info:#475569;--bad:#b91c1c;--ok:#15803d;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;font-size:15px}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Kopf – gleiche Sprache wie index.html */
+.masthead{background:var(--ink);color:#e2e8f0;border-bottom:3px solid var(--accent)}
+.masthead .in{max-width:1240px;margin:0 auto;padding:22px 20px 20px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 28px}
+.masthead h1{margin:0;font-size:24px;color:#fff;letter-spacing:-.01em}
+.masthead .sub{font-size:13px;color:#94a3b8}
+.stamp{display:flex;align-items:baseline;gap:8px;margin-left:auto}
+.stamp .ver{font-size:26px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+.stamp .lab{font-size:12px;color:#94a3b8}
+.dirty{font-size:12.5px;padding:3px 10px;border-radius:20px;background:#1e293b;color:#94a3b8}
+.dirty.on{background:#fef3c7;color:#92400e;font-weight:600}
+
+.toolbar{max-width:1240px;margin:0 auto;padding:14px 20px 0;display:flex;flex-wrap:wrap;gap:8px}
+.btn{cursor:pointer;font-size:14px;font-weight:600;padding:8px 15px;border-radius:9px;border:1px solid var(--line);background:#fff}
+.btn:hover{border-color:#94a3b8}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.primary:hover{background:var(--accent-2)}
+.btn.danger{color:var(--bad)}.btn.danger:hover{border-color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.spacer{flex:1}
+
+.layout{max-width:1240px;margin:0 auto;padding:14px 20px 60px;display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+@media(max-width:860px){.layout{grid-template-columns:1fr}}
+.legal{max-width:1240px;margin:0 auto;padding:0 20px 28px;font-size:12px;color:var(--muted)}.legal p{margin:0;border-top:1px solid var(--line);padding-top:12px}.legal a{color:inherit}
+
+/* Regelliste */
+.list{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:sticky;top:12px;max-height:calc(100vh - 24px);display:flex;flex-direction:column}
+@media(max-width:860px){.list{position:static;max-height:none}}
+.list .search{padding:10px;border-bottom:1px solid var(--line)}
+.list .search input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+.list .items{overflow:auto}
+.cat{padding:9px 12px 4px;font-size:12px;font-weight:700;color:var(--muted);background:#f8fafc;border-top:1px solid var(--line)}
+.cat:first-child{border-top:0}
+.item{display:grid;grid-template-columns:6px 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;border:0;border-top:1px solid #f1f5f9;background:#fff;padding:8px 12px;cursor:pointer}
+.item:hover{background:#f8fafc}
+.item.sel{background:#f0fdfa;box-shadow:inset 3px 0 0 var(--accent)}
+.item .bar{height:30px;border-radius:3px}
+.item .id{font-size:11.5px;color:var(--muted)}
+.item .t{font-size:13.5px;line-height:1.3}
+.item.off .t,.item.off .id{text-decoration:line-through;opacity:.6}
+.mark{font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px}
+.mark.new{background:#dcfce7;color:#166534}.mark.chg{background:#fef3c7;color:#92400e}.mark.man{background:#f1f5f9;color:#475569}
+.sect{margin:22px 0 10px;padding-top:16px;border-top:1px solid var(--line);font-size:16px}
+.chk-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:-4px 0 12px}
+.chk-tools select{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:13.5px}
+.chk-tools .btn{padding:6px 12px;font-size:13.5px}
+.probe-cfg{font-size:13px;color:var(--muted)}
+.f textarea.code.big{min-height:280px}
+.out{border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:13.5px;margin-bottom:14px;background:#f8fafc}
+.out.bad{border-color:#fecaca;background:#fef2f2;color:var(--bad)}.out.good{border-color:#bbf7d0;background:#f0fdf4}
+.out ul{margin:6px 0 0;padding-left:20px}.out .st{font-weight:700;padding:1px 8px;border-radius:5px;color:#fff;margin-right:6px}
+.st-FAIL{background:#b91c1c}.st-WARN{background:#b45309}.st-PASS{background:#15803d}.st-NA,.st-MANUAL{background:#64748b}.st-ERROR{background:#7f1d1d}
+details.ref{border:1px solid var(--line);border-radius:9px;padding:8px 13px;font-size:13px;margin-bottom:14px}
+details.ref summary{cursor:pointer;font-weight:600;font-size:13.5px}
+details.ref h4{margin:12px 0 4px;font-size:13px}details.ref dl{margin:0;display:grid;grid-template-columns:minmax(120px,max-content) 1fr;gap:2px 12px}
+details.ref dt{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.5px}details.ref dd{margin:0;color:var(--muted)}
+.empty-list{padding:18px;color:var(--muted);font-size:14px}
+
+/* Formular */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+.panel h2{margin:0 0 4px;font-size:19px}
+.panel .hint{color:var(--muted);font-size:13.5px;margin:0 0 16px;max-width:75ch}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+@media(max-width:620px){.grid2{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.f label{font-size:13px;font-weight:600}
+.f small{color:var(--muted);font-size:12.5px}
+.f input[type=text],.f select,.f textarea{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;width:100%}
+.f textarea{min-height:84px;resize:vertical;line-height:1.45}
+.f textarea.code{min-height:110px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px}
+.f .err{color:var(--bad);font-size:12.5px;min-height:0}
+.f.invalid input,.f.invalid textarea{border-color:var(--bad)}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:14px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;padding-top:14px;border-top:1px solid var(--line)}
+.note{background:#f8fafc;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13px;color:var(--muted);margin-bottom:14px}
+.welcome{text-align:center;padding:48px 20px}
+.welcome h2{margin:0 0 8px}
+.weights{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:620px){.weights{grid-template-columns:repeat(2,1fr)}}
+
+/* Speichern-Dialog (natives <dialog>) */
+dialog{border:0;border-radius:14px;padding:0;width:min(700px,94vw);box-shadow:0 30px 70px -20px rgba(15,23,42,.55)}
+dialog::backdrop{background:rgba(15,23,42,.55)}
+.dlg{padding:22px}
+.dlg h2{margin:0 0 12px;font-size:19px}
+.vrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.vrow .from{font-size:15px;color:var(--muted)}
+.vrow input{width:120px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-weight:700}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:6px 11px;cursor:pointer;font-size:13px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.changes{border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13.5px;margin-bottom:12px;max-height:190px;overflow:auto}
+.changes div{margin:2px 0}
+.changes b{display:inline-block;min-width:92px}
+
+.toast{position:fixed;right:18px;bottom:18px;background:var(--ink);color:#fff;padding:10px 15px;border-radius:9px;font-size:13.5px;opacity:0;transform:translateY(6px);transition:.18s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+.toast.bad{background:var(--bad)}
+@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<header class="masthead"><div class="in">
+  <div>
+    <h1>Regel-Editor</h1>
+    <div class="sub"><span id="catname">Kein Katalog geladen</span> <span id="catcount"></span></div>
+  </div>
+  <span class="dirty" id="dirty">keine Änderungen</span>
+  <div class="stamp"><span class="lab">Version</span><span class="ver" id="ver">–</span></div>
+</div></header>
+
+<div class="toolbar">
+  <button class="btn" id="b-open">rules.js öffnen …</button>
+  <input type="file" id="file" accept=".js,.json,application/json,text/javascript">
+  <input type="file" id="probe-file" accept=".xml,text/xml,application/xml">
+  <button class="btn" id="b-new" disabled>Neue Regel</button>
+  <button class="btn" id="b-meta" disabled>Katalog-Einstellungen</button>
+  <span class="spacer"></span>
+  <button class="btn primary" id="b-save" disabled>Als neue Version speichern …</button>
+</div>
+
+<main class="layout">
+  <nav class="list" aria-label="Regeln">
+    <div class="search"><input type="search" id="q" placeholder="Suchen (ID, Titel, Kategorie)" aria-label="Regeln durchsuchen"></div>
+    <div class="items" id="items"><div class="empty-list">Noch keine Regeln geladen.</div></div>
+  </nav>
+  <section class="panel" id="panel">
+    <div class="welcome">
+      <h2>rules.js laden</h2>
+      <p class="hint" style="margin:0 auto 16px">Liegt der Editor im selben Ordner wie <span class="mono">rules.js</span>, wird der Katalog automatisch geladen. Sonst die Datei über „rules.js öffnen …“ auswählen – sie wird nur lokal im Browser gelesen.</p>
+      <button class="btn primary" onclick="document.getElementById('file').click()">rules.js öffnen …</button>
+    </div>
+  </section>
+</main>
+<footer class="legal"><p><b>Firewall-Validation Portable</b> · Copyright © 2026 Christian Jelitte · Freie Software unter der <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPL Version 3 oder später</a>, ohne jede Gewährleistung. Lizenztext: <a href="LICENSE">LICENSE</a> · Pflicht zur Urhebernennung: <a href="NOTICE">NOTICE</a></p></footer>
+
+<dialog id="dlg"><form method="dialog" class="dlg" id="dlgform">
+  <h2>Als neue Version speichern</h2>
+  <div class="vrow">
+    <span class="from">von <b id="d-from" class="mono"></b> auf</span>
+    <input type="text" id="d-ver" class="mono" aria-label="Neue Versionsnummer" required pattern="\d+\.\d+\.\d+">
+    <span class="seg" role="group" aria-label="Versionssprung">
+      <button type="button" data-bump="patch">Patch</button><button type="button" data-bump="minor">Minor</button><button type="button" data-bump="major">Major</button>
+    </span>
+  </div>
+  <div class="changes" id="d-changes"></div>
+  <div class="f"><label for="d-note">Änderungsnotiz (optional, landet im Changelog des Katalogs)</label>
+    <textarea id="d-note" style="min-height:60px" placeholder="z. B. Neue Regel für DNS-over-TLS ergänzt"></textarea></div>
+  <div class="f"><label for="d-name">Dateiname</label>
+    <input type="text" id="d-name" class="mono">
+    <small>Zum Einsatz die Datei als <span class="mono">rules.js</span> neben <span class="mono">index.html</span> ablegen (alte Datei ersetzen).</small></div>
+  <div class="actions" style="border:0;padding-top:0">
+    <button class="btn primary" type="button" id="d-js">rules.js herunterladen</button>
+    <button class="btn" type="button" id="d-json" title="Gleicher Inhalt als reines JSON für das Python-Audit-Tool">Als rules.json (Python-Tool)</button>
+    <span class="spacer"></span>
+    <button class="btn" value="cancel">Abbrechen</button>
+  </div>
+</form></dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Katalog wie in index.html per <script> laden (funktioniert auch unter file://). Fehlt die Datei, bleibt RULES_DATA leer. -->
+<script src="rules.js"></script>
+<script src="engine.js"></script>
+<script>
+"use strict";
+var SEV = [["critical","Kritisch"],["high","Hoch"],["medium","Mittel"],["low","Niedrig"],["info","Info"]];
+var SEV_LABEL = {}; SEV.forEach(function(s){ SEV_LABEL[s[0]] = s[1]; });
+var ID_RE = /^[A-Z0-9][A-Z0-9-]*$/;
+var SPEC = (typeof PARAM_SPEC === "object") ? PARAM_SPEC : null;   // aus engine.js: welche Parameter wirken
+var ENGINE = (typeof pruefeDefinition === "function" && typeof SPRACHE === "object");   // Regelsprache verfuegbar?
+var PROBE = null;   // fuer den Probelauf geladene config.xml {name, text}
+// Vorlagen fuer das Pruefungsfeld (Ausgangspunkte, danach anpassen)
+var VORLAGEN = {
+  "Wert oder Schalter in der Config prüfen": {
+    werte: {wert: {pfad: {opnsense: "OPNsense/Modul/general/einstellung", pfsense: "modul/einstellung"}}},
+    ergebnis: [
+      {wenn: {nicht: {existiert: {opnsense: "OPNsense/Modul", pfsense: "modul"}}}, status: "NA", notiz: "Nicht konfiguriert."},
+      {wenn: {wert: "unsicherer-wert"}, status: "FAIL", befund: "Einstellung steht auf '{wert}'."},
+      {status: "PASS", notiz: "Einstellung: {wert|(leer)}."}]},
+  "Firewall-Regeln filtern (z. B. Port auf WAN)": {
+    quelle: "filterregeln",
+    wo: {und: [{aktiv: true, aktion: "pass", ist_wan: true}, {feld: "ziel_port", port_ist: ["25"]}]},
+    vorlage: "#{nr} [{interface}] {quelle_anzeige} -> {ziel_text} - '{descr}'",
+    ergebnis: [
+      {wenn: "treffer", status: "WARN", befunde: "je_treffer", notiz: "Port 25 vom WAN erreichbar."},
+      {status: "PASS"}]},
+  "NAT-Weiterleitungen filtern": {
+    quelle: "nat",
+    wo: {und: [{ist_wan: true, quelle_any: true}, {feld: "ports", ports_schneiden: [8080]}]},
+    vorlage: "Port(s) {treffer_ports} -> {ziel} - '{descr}'",
+    ergebnis: [
+      {wenn: "treffer", status: "FAIL", befunde: "je_treffer"},
+      {status: "PASS"}]},
+  "XML-Liste durchlaufen (Einträge einzeln prüfen)": {
+    abfragen: [
+      {plattform: "opnsense", xml: "OPNsense/Modul/Eintraege/*", wo: {feld: "einstellung", ist: "unsicher"}, vorlage: "Eintrag '{description}'"},
+      {plattform: "pfsense", xml: "modul/eintrag", wo: {feld: "einstellung", ist: "unsicher"}, vorlage: "Eintrag '{descr}'"}],
+    ergebnis: [
+      {wenn: "quellen_leer", status: "NA", notiz: "Keine Einträge."},
+      {wenn: "treffer", status: "WARN", befund: "Unsichere Einträge: {liste}."},
+      {status: "PASS"}]},
+  "Reihenfolge von Firewall-Regeln prüfen": {
+    typ: "reihenfolge", quelle: "filterregeln", gleich: ["interface", "richtung"], umfasst: ["ip_version"],
+    vorher: {aktiv: true, floating: false, aktion: "pass", quelle_any: true, ziel_any: true, protokoll: "any", zusatzbedingung: false},
+    nachher: {aktiv: true, floating: false, aktion: "block", log: true},
+    vorlage: "#{nachher.nr} [{interface}/{richtung}] '{nachher.descr}' steht hinter #{vorher.nr} '{vorher.descr}'",
+    ergebnis: [
+      {wenn: "treffer", status: "WARN", befunde: "je_treffer"},
+      {status: "PASS"}]},
+  "Baustein (Prüfung in Programmcode) aufrufen": {typ: "baustein", name: "MGMT-WEBGUI-WAN"}
+};
+// Pruefregeln fuer wirksame Parameter (gleiche Grenzen wie in engine.js)
+var PARAM_CHECK = {
+  sensitive_ports: function(v){ return Array.isArray(v) && v.length && v.every(function(x){ return Number.isInteger(x) && x>=1 && x<=65535; }) ? "" : "Liste ganzer Zahlen zwischen 1 und 65535 erwartet, z. B. [22, 3389]."; },
+  default_communities: function(v){ return Array.isArray(v) && v.length && v.every(function(x){ return typeof x==="string" && x.trim(); }) ? "" : "Liste von Texten erwartet, z. B. [\"public\", \"private\"]."; },
+  wan_zone_severity: function(v){ return SEV_LABEL[v] ? "" : "Einer von: critical, high, medium, low, info."; }
+};
+
+var CAT = null;          // aktueller Katalog (wird direkt bearbeitet)
+var BASE = null;         // Stand beim Laden bzw. letzten Speichern (Vergleichsbasis)
+var SEL = null;          // gewaehlte Regel-ID, "__new__" oder "__meta__"
+
+/* ---------- kleine Helfer ---------- */
+function $(id){ return document.getElementById(id); }
+function el(tag, attrs, kids){
+  var e = document.createElement(tag);
+  if (attrs) for (var k in attrs){ if (k === "text") e.textContent = attrs[k]; else if (k === "class") e.className = attrs[k]; else e.setAttribute(k, attrs[k]); }
+  (kids || []).forEach(function(c){ if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+  return e;
+}
+function toast(msg, bad){ var t=$("toast"); t.textContent=msg; t.className="toast show"+(bad?" bad":""); clearTimeout(toast._t); toast._t=setTimeout(function(){t.className="toast";},2600); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function sevColor(s){ return "var(--sev-"+(SEV_LABEL[s]?s:"info")+")"; }
+
+/* ---------- Laden ---------- */
+function parseCatalog(text){
+  text = text.trim();
+  var body = text.charAt(0) === "{" ? text : (text.match(/=\s*(\{[\s\S]*\})\s*;?\s*$/) || [])[1];
+  if (!body) throw new Error("Kein Katalog gefunden (erwartet: window.RULES_DATA = {...}; oder reines JSON).");
+  var c = JSON.parse(body);   // kein eval: die Datei wird nur als Daten gelesen
+  if (!c || !c.meta || !Array.isArray(c.rules)) throw new Error("Unerwartete Struktur: 'meta' und 'rules' fehlen.");
+  return c;
+}
+function load(catalog, source){
+  CAT = catalog; BASE = clone(catalog); SEL = null;
+  ["b-new","b-meta","b-save"].forEach(function(b){ $(b).disabled = false; });
+  renderAll(); showWelcomeLoaded(source);
+}
+$("b-open").onclick = function(){ if (isDirty() && !confirm("Ungespeicherte Änderungen verwerfen und andere Datei öffnen?")) return; $("file").click(); };
+$("file").onchange = function(){
+  var f = this.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function(){ try { load(parseCatalog(r.result), f.name); toast(f.name+" geladen: "+CAT.rules.length+" Regeln"); } catch(e){ toast(e.message, true); } };
+  r.readAsText(f, "utf-8"); this.value = "";
+};
+
+/* ---------- Vergleich mit dem geladenen Stand ---------- */
+function diff(){
+  var b = {}, c = {}, out = {added:[],changed:[],removed:[],meta:false};
+  BASE.rules.forEach(function(r){ b[r.id] = JSON.stringify(r); });
+  CAT.rules.forEach(function(r){ c[r.id] = JSON.stringify(r); });
+  CAT.rules.forEach(function(r){ if (!(r.id in b)) out.added.push(r.id); else if (b[r.id] !== c[r.id]) out.changed.push(r.id); });
+  BASE.rules.forEach(function(r){ if (!(r.id in c)) out.removed.push(r.id); });
+  var mb = clone(BASE.meta), mc = clone(CAT.meta); delete mb.changelog; delete mc.changelog;
+  out.meta = JSON.stringify(mb) !== JSON.stringify(mc);
+  return out;
+}
+function isDirty(){ if (!CAT) return false; var d = diff(); return d.added.length+d.changed.length+d.removed.length > 0 || d.meta; }
+window.addEventListener("beforeunload", function(e){ if (isDirty()){ e.preventDefault(); e.returnValue = ""; } });
+
+/* ---------- Kopf + Liste ---------- */
+function renderHead(){
+  $("catname").textContent = CAT.meta.catalog || "Katalog";
+  $("catcount").textContent = "· " + CAT.rules.length + " Regeln, " + CAT.rules.filter(function(r){return r.enabled===false;}).length + " deaktiviert";
+  $("ver").textContent = CAT.meta.version || "–";
+  var d = diff(), n = d.added.length + d.changed.length + d.removed.length + (d.meta?1:0);
+  $("dirty").textContent = n ? n + " ungespeicherte Änderung" + (n>1?"en":"") : "keine Änderungen";
+  $("dirty").className = "dirty" + (n ? " on" : "");
+}
+function renderList(){
+  var q = $("q").value.trim().toLowerCase(), d = diff(), box = $("items"), last = null, shown = 0;
+  box.textContent = "";
+  CAT.rules.forEach(function(r){
+    var hay = (r.id+" "+r.title+" "+r.category).toLowerCase();
+    if (q && hay.indexOf(q) < 0) return;
+    if (r.category !== last){ box.appendChild(el("div",{class:"cat",text:r.category||"(ohne Kategorie)"})); last = r.category; }
+    var ohne = !r.check && !(typeof CHECKS === "object" && CHECKS[r.id]);
+    var mark = d.added.indexOf(r.id) >= 0 ? el("span",{class:"mark new",text:"neu"}) : d.changed.indexOf(r.id) >= 0 ? el("span",{class:"mark chg",text:"geändert"})
+             : ohne ? el("span",{class:"mark man",text:"ohne Prüfung",title:"Keine Prüfdefinition: erscheint im Bericht als MANUELL"}) : null;
+    var bar = el("span",{class:"bar"}); bar.style.background = sevColor(r.severity);
+    var b = el("button",{class:"item"+(r.id===SEL?" sel":"")+(r.enabled===false?" off":""),type:"button",title:SEV_LABEL[r.severity]||r.severity},
+      [bar, el("span",null,[el("div",{class:"id mono",text:r.id}), el("div",{class:"t",text:r.title})]), mark]);
+    b.onclick = function(){ select(r.id); };
+    box.appendChild(b); shown++;
+  });
+  if (!shown) box.appendChild(el("div",{class:"empty-list",text: q ? "Keine Regel passt zur Suche." : "Der Katalog enthält noch keine Regeln."}));
+}
+$("q").oninput = renderList;
+function renderAll(){ renderHead(); renderList(); }
+
+function showWelcomeLoaded(source){
+  var p = $("panel"); p.textContent = "";
+  p.appendChild(el("div",{class:"welcome"},[
+    el("h2",{text:"Katalog geladen"}),
+    el("p",{class:"hint",style:"margin:0 auto 16px",text:"„"+source+"“ mit "+CAT.rules.length+" Regeln in Version "+(CAT.meta.version||"?")+". Links eine Regel wählen, um sie anzusehen oder zu bearbeiten, oder eine neue Regel anlegen."})
+  ]));
+}
+
+/* ---------- Regel-Formular ---------- */
+function field(label, input, help){
+  var err = el("div",{class:"err"}), f = el("div",{class:"f"},[el("label",{for:input.id,text:label}), input, help ? el("small",{text:help}) : null, err]);
+  f._err = err; return f;
+}
+function select(id){ SEL = id; renderList(); renderForm(); }
+
+function renderForm(){
+  var isNew = SEL === "__new__";
+  var r = isNew ? {id:"",title:"",category:"",severity:"medium",rationale:"",remediation:""} : CAT.rules.find(function(x){return x.id===SEL;});
+  if (!r) return;
+  var p = $("panel"); p.textContent = "";
+  p.appendChild(el("h2",{text: isNew ? "Neue Regel" : r.id}));
+  p.appendChild(el("p",{class:"hint",text: isNew
+    ? "Die Regel wird am Ende ihrer Kategorie eingefügt."
+    : "Änderungen mit „Übernehmen“ in den Katalog schreiben. Gespeichert wird erst über „Als neue Version speichern …“."}));
+  if (isNew) p.appendChild(el("div",{class:"note",text:"Ohne Prüfung erscheint die Regel im Bericht mit Status MANUELL und zählt nicht in den Score. Mit einer Prüfung (Bereich „Prüfung“ unten, am einfachsten über eine Vorlage) wird sie beim nächsten Audit sofort ausgewertet."}));
+
+  var iId = el("input",{type:"text",id:"i-id",class:"mono",value:r.id,autocomplete:"off",spellcheck:"false"});
+  var iTitle = el("input",{type:"text",id:"i-title",value:r.title||""});
+  var iCat = el("input",{type:"text",id:"i-cat",value:r.category||"",list:"cats"});
+  var cats = el("datalist",{id:"cats"}); unique(CAT.rules.map(function(x){return x.category;})).forEach(function(c){ cats.appendChild(el("option",{value:c})); });
+  var iSev = el("select",{id:"i-sev"});
+  SEV.forEach(function(s){ var o = el("option",{value:s[0],text:s[1]+" (Gewicht "+(CAT.meta.severity_weights||{})[s[0]]+")"}); if (s[0]===r.severity) o.selected = true; iSev.appendChild(o); });
+  var iEn = el("input",{type:"checkbox",id:"i-en"}); iEn.checked = r.enabled !== false;
+  var iRat = el("textarea",{id:"i-rat"}); iRat.value = r.rationale || "";
+  var iRem = el("textarea",{id:"i-rem"}); iRem.value = r.remediation || "";
+  var iRef = el("textarea",{id:"i-ref",style:"min-height:60px"}); iRef.value = (r.references||[]).join("\n");
+  var iPar = el("textarea",{id:"i-par",class:"code",spellcheck:"false"}); iPar.value = r.params ? JSON.stringify(r.params,null,2) : "";
+
+  var fId = field("ID", iId, "Großbuchstaben, Ziffern und Bindestrich, z. B. SVC-DOT-MISSING. Muss eindeutig sein.");
+  var fTitle = field("Titel", iTitle);
+  var fCat = field("Kategorie", iCat, "Vorhandene Kategorie wählen oder eine neue eintippen.");
+  var fSev = field("Schweregrad", iSev);
+  var fRat = field("Begründung", iRat);
+  var fRem = field("Maßnahme", iRem);
+  var fRef = field("Referenzen", iRef, "Eine Referenz pro Zeile.");
+  var spec = SPEC && SPEC.rules[r.id];
+  var refs = []; (JSON.stringify(r.check || {}).match(/"@param:[^"]+"/g) || []).forEach(function(x){ x = x.slice(8, -1); if (refs.indexOf(x) < 0 && !(spec && spec[x] !== undefined)) refs.push(x); });
+  var parHelp = !SPEC ? "engine.js nicht gefunden – welche Parameter wirken, kann nicht angezeigt werden."
+    : (spec || refs.length) ? "Wirksam: " + (spec ? Object.keys(spec).map(function(k){ return k + " – " + spec[k]; }) : []).concat(refs.map(function(k){ return k + " – in der Prüfung per @param:" + k + " verwendet."; })).join(" ")
+    : "Die Prüfung dieser Regel liest keine Parameter. Einträge hier dienen nur der Dokumentation.";
+  var fPar = field("Parameter (JSON, optional)", iPar, parHelp);
+
+  p.appendChild(el("div",{class:"grid2"},[fId, fSev]));
+  p.appendChild(fTitle);
+  p.appendChild(fCat); p.appendChild(cats);
+  p.appendChild(el("label",{class:"check"},[iEn, "Regel aktiv (deaktivierte Regeln werden nicht geprüft)"]));
+  p.appendChild(fRat); p.appendChild(fRem);
+  p.appendChild(el("div",{class:"grid2"},[fRef, fPar]));
+
+  // --- Pruefung ---
+  var iChk = el("textarea",{id:"i-chk",class:"code big",spellcheck:"false"}); iChk.value = r.check ? JSON.stringify(r.check, null, 2) : "";
+  var fChk = field("Prüfung (JSON)", iChk, "Leer = keine automatische Prüfung (Status MANUELL). Aufbau: Sprachreferenz unten; als Ausgangspunkt eine Vorlage einfügen.");
+  var sTpl = el("select",{id:"i-tpl","aria-label":"Vorlage einfügen"}, [el("option",{value:"",text:"Vorlage einfügen …"})]);
+  Object.keys(VORLAGEN).forEach(function(k){ sTpl.appendChild(el("option",{value:k,text:k})); });
+  var bChk = el("button",{class:"btn",type:"button",id:"b-chk",text:"Aufbau prüfen"});
+  var bRun = el("button",{class:"btn",type:"button",id:"b-run",text:"Probelauf"});
+  var bCfg = el("button",{class:"btn",type:"button",id:"b-cfg",text:"Test-Config laden …"});
+  var probeInfo = el("span",{class:"probe-cfg",id:"probe-info",text: PROBE ? "Test-Config: " + PROBE.name : "keine Test-Config geladen"});
+  var out = el("div",{class:"out",id:"chk-out",style:"display:none"});
+  p.appendChild(el("h3",{class:"sect",text:"Prüfung"}));
+  if (!ENGINE) p.appendChild(el("div",{class:"note",text:"engine.js nicht gefunden: Prüfungen können hier nicht geprüft oder ausprobiert werden."}));
+  p.appendChild(fChk);
+  p.appendChild(el("div",{class:"chk-tools"},[sTpl, bChk, bRun, bCfg, probeInfo]));
+  p.appendChild(out);
+  if (ENGINE) p.appendChild(sprachReferenz());
+
+  var bOk = el("button",{class:"btn primary",type:"button",text: isNew ? "Regel anlegen" : "Übernehmen"});
+  var bReset = el("button",{class:"btn",type:"button",text: isNew ? "Abbrechen" : "Änderungen verwerfen"});
+  var bDel = isNew ? null : el("button",{class:"btn danger",type:"button",text:"Regel löschen"});
+  var bRestore = null;
+  if (!isNew && BASE.rules.some(function(x){return x.id===r.id;}) && diff().changed.indexOf(r.id) >= 0)
+    bRestore = el("button",{class:"btn",type:"button",text:"Auf geladenen Stand zurücksetzen"});
+  p.appendChild(el("div",{class:"actions"},[bOk, bReset, bRestore, el("span",{class:"spacer"}), bDel]));
+
+  bOk.onclick = function(){
+    [fId,fTitle,fCat,fPar,fChk].forEach(function(f){ f.classList.remove("invalid"); f._err.textContent=""; });
+    var id = iId.value.trim().toUpperCase(), ok = true, params;
+    function bad(f,msg){ f.classList.add("invalid"); f._err.textContent = msg; ok = false; }
+    if (!ID_RE.test(id)) bad(fId,"Ungültige ID.");
+    else if (id !== r.id && CAT.rules.some(function(x){return x.id===id;})) bad(fId,"Diese ID gibt es bereits.");
+    if (!iTitle.value.trim()) bad(fTitle,"Titel fehlt.");
+    if (!iCat.value.trim()) bad(fCat,"Kategorie fehlt.");
+    if (iPar.value.trim()){
+      try { params = JSON.parse(iPar.value); if (typeof params!=="object" || Array.isArray(params) || params===null) throw new Error("Objekt erwartet"); }
+      catch(e){ bad(fPar,"Kein gültiges JSON-Objekt: "+e.message); }
+      if (params && spec) Object.keys(spec).forEach(function(k){
+        if (k in params && PARAM_CHECK[k]) { var msg = PARAM_CHECK[k](params[k]); if (msg) bad(fPar, k + ": " + msg); }
+      });
+    }
+    var chk = leseCheck(iChk, fChk, bad, id, params);
+    if (!ok){ toast("Bitte die markierten Felder prüfen.", true); return; }
+
+    // Schluesselreihenfolge wie im Original; optionale Felder nur schreiben, wenn gesetzt
+    var n = {id:id, title:iTitle.value.trim(), category:iCat.value.trim(), severity:iSev.value};
+    if (!iEn.checked) n.enabled = false;
+    n.rationale = iRat.value.trim(); n.remediation = iRem.value.trim();
+    var refs = iRef.value.split("\n").map(function(s){return s.trim();}).filter(Boolean);
+    if (refs.length) n.references = refs;
+    if (params && Object.keys(params).length) n.params = params;
+    if (chk) n.check = chk;
+    for (var k in r) if (!(k in n) && ["enabled","references","params","check"].indexOf(k) < 0 && !(k in {id:1,title:1,category:1,severity:1,rationale:1,remediation:1})) n[k] = r[k]; // unbekannte Felder erhalten
+
+    if (isNew){
+      var idx = -1; CAT.rules.forEach(function(x,i){ if (x.category === n.category) idx = i; });
+      CAT.rules.splice(idx < 0 ? CAT.rules.length : idx+1, 0, n);
+      toast("Regel "+id+" angelegt.");
+    } else {
+      CAT.rules[CAT.rules.indexOf(r)] = n;
+      toast("Regel "+id+" übernommen.");
+    }
+    SEL = id; renderAll(); renderForm();
+  };
+  sTpl.onchange = function(){
+    if (!sTpl.value) return;
+    if (iChk.value.trim() && !confirm("Die vorhandene Prüfung durch die Vorlage ersetzen?")) { sTpl.value = ""; return; }
+    iChk.value = JSON.stringify(VORLAGEN[sTpl.value], null, 2); sTpl.value = ""; iChk.focus();
+  };
+  bChk.onclick = function(){
+    fChk.classList.remove("invalid"); fChk._err.textContent = "";
+    var errs = [], obj = null;
+    if (!iChk.value.trim()) { zeige(out, "", "Keine Prüfung eingetragen – die Regel erscheint als MANUELL."); return; }
+    try { obj = JSON.parse(iChk.value); } catch(e){ errs = ["Kein gültiges JSON: " + e.message]; }
+    if (obj && ENGINE) errs = pruefeDefinition(obj, {id: iId.value.trim().toUpperCase(), params: leseParams(iPar)});
+    if (errs.length) zeige(out, "bad", "Aufbaufehler:", errs); else zeige(out, "good", "Aufbau in Ordnung.");
+  };
+  bCfg.onclick = function(){ PROBE_ZIEL = function(){ probeInfo.textContent = "Test-Config: " + PROBE.name; bRun.onclick(); }; $("probe-file").click(); };
+  bRun.onclick = function(){
+    if (!ENGINE) { zeige(out, "bad", "engine.js nicht gefunden."); return; }
+    if (!PROBE) { bCfg.onclick(); return; }
+    var obj = null, par = leseParams(iPar);
+    if (iChk.value.trim()) { try { obj = JSON.parse(iChk.value); } catch(e){ zeige(out, "bad", "Kein gültiges JSON: " + e.message); return; } }
+    var errs = obj ? pruefeDefinition(obj, {id: iId.value.trim().toUpperCase() || r.id, params: par}) : [];
+    if (errs.length) { zeige(out, "bad", "Aufbaufehler:", errs); return; }
+    var probe = {id: iId.value.trim().toUpperCase() || r.id || "PROBE", title: iTitle.value, severity: iSev.value};
+    if (par) probe.params = par;
+    if (obj) probe.check = obj;
+    var kat = clone(CAT), i = kat.rules.findIndex(function(x){ return x.id === r.id; });
+    if (i >= 0) kat.rules[i] = probe; else kat.rules.push(probe);
+    try {
+      var res = probelauf(probe, PROBE.text, kat);
+      var box = [el("span",{class:"st st-" + res.status, text: STATUS_DE[res.status] || res.status}),
+                 (SEV_LABEL[res.severity] || res.severity) + " · " + (res.platform === "pfsense" ? "pfSense" : "OPNsense") + " · " + PROBE.name
+                 + (res.treffer !== undefined ? " · " + res.treffer + " Treffer" : "")];
+      out.className = "out"; out.style.display = ""; out.textContent = "";
+      out.appendChild(el("div",null,box));
+      if (res.findings.length) { var ul = el("ul"); res.findings.forEach(function(f){ ul.appendChild(el("li",{text:f})); }); out.appendChild(ul); }
+      if (res.note) out.appendChild(el("div",{style:"margin-top:6px;color:var(--muted)",text:"Notiz: " + res.note}));
+    } catch(e) { zeige(out, "bad", e.message); }
+  };
+  bReset.onclick = function(){ if (isNew){ SEL=null; renderList(); showWelcomeLoaded("Katalog"); } else renderForm(); };
+  if (bRestore) bRestore.onclick = function(){
+    var orig = BASE.rules.find(function(x){return x.id===r.id;});
+    CAT.rules[CAT.rules.indexOf(r)] = clone(orig); renderAll(); renderForm(); toast("Regel "+r.id+" zurückgesetzt.");
+  };
+  if (bDel) bDel.onclick = function(){
+    if (!confirm("Regel „"+r.id+"“ aus dem Katalog löschen?")) return;
+    CAT.rules.splice(CAT.rules.indexOf(r),1); SEL=null; renderAll(); showWelcomeLoaded("Katalog"); toast("Regel "+r.id+" gelöscht.");
+  };
+  (isNew ? iId : iTitle).focus();
+}
+function unique(a){ return a.filter(function(x,i){ return x && a.indexOf(x)===i; }); }
+var STATUS_DE = {FAIL:"FAIL", WARN:"WARN", PASS:"OK", NA:"N/A", MANUAL:"MANUELL", ERROR:"FEHLER"};
+var PROBE_ZIEL = null;
+$("probe-file").onchange = function(){
+  var f = this.files[0]; if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){ PROBE = {name: f.name, text: rd.result}; toast("Test-Config " + f.name + " geladen."); if (PROBE_ZIEL) PROBE_ZIEL(); };
+  rd.readAsText(f, "utf-8"); this.value = "";
+};
+function zeige(box, art, titel, liste){
+  box.className = "out" + (art ? " " + art : ""); box.style.display = ""; box.textContent = "";
+  box.appendChild(el("div",{text:titel}));
+  if (liste && liste.length){ var ul = el("ul"); liste.forEach(function(x){ ul.appendChild(el("li",{text:x})); }); box.appendChild(ul); }
+}
+function leseParams(iPar){ try { var v = JSON.parse(iPar.value || "null"); return (v && typeof v === "object" && !Array.isArray(v)) ? v : undefined; } catch(e){ return undefined; } }
+// Liest das Pruefungsfeld; meldet Fehler ueber bad(); Rueckgabe: Objekt oder null (leer)
+function leseCheck(iChk, fChk, bad, id, params){
+  if (!iChk.value.trim()) return null;
+  var obj;
+  try { obj = JSON.parse(iChk.value); } catch(e){ bad(fChk, "Kein gültiges JSON: " + e.message); return null; }
+  if (ENGINE) { var errs = pruefeDefinition(obj, {id:id, params:params}); if (errs.length) { bad(fChk, errs.join(" · ")); return null; } }
+  return obj;
+}
+// Sprachreferenz aus engine.js erzeugen (bleibt damit immer aktuell)
+function sprachReferenz(){
+  var d = el("details",{class:"ref"},[el("summary",{text:"Sprachreferenz: Quellen, Felder, Operatoren"})]);
+  function liste(titel, obj){ var dl = el("dl"); Object.keys(obj).forEach(function(k){ dl.appendChild(el("dt",{text:k})); dl.appendChild(el("dd",{text:obj[k]})); }); d.appendChild(el("h4",{text:titel})); d.appendChild(dl); }
+  d.appendChild(el("p",{style:"margin:8px 0 0",text:"Typen: \"abfrage\" (Standard: Werte lesen, Einträge filtern, Fälle auswerten), \"reihenfolge\" (Regel A steht vor Regel B), \"baustein\" (Prüfung in Programmcode: " + Object.keys(CHECKS).join(", ") + "). Ergebnis-Fälle werden von oben nach unten geprüft, der erste passende gilt. Textvorlagen: {feld}, {feld|Ersatz}, {feld:klein}, {?feld=Text}, {liste}; XML-Pfade: a/b/c, a/* (alle Kinder), //name (irgendwo). Parameter der Regel: \"@param:name\"."}));
+  Object.keys(SPRACHE.quellen).forEach(function(q){ var x = SPRACHE.quellen[q]; d.appendChild(el("h4",{text:"Quelle „" + q + "“ – " + x.text})); if (Object.keys(x.felder).length) { var dl = el("dl"); Object.keys(x.felder).forEach(function(k){ dl.appendChild(el("dt",{text:k})); dl.appendChild(el("dd",{text:x.felder[k]})); }); d.appendChild(dl); } });
+  liste("Allgemeine Felder (überall verfügbar)", SPRACHE.allgemein);
+  liste("Operatoren (mit \"feld\")", SPRACHE.operatoren);
+  liste("Bedingungen", SPRACHE.sonder);
+  return d;
+}
+$("b-new").onclick = function(){ select("__new__"); };
+
+/* ---------- Katalog-Einstellungen ---------- */
+$("b-meta").onclick = function(){
+  SEL = "__meta__"; renderList();
+  var m = CAT.meta, p = $("panel"); p.textContent = "";
+  p.appendChild(el("h2",{text:"Katalog-Einstellungen"}));
+  p.appendChild(el("p",{class:"hint",text:"Name und Beschreibung erscheinen im Bericht. Gewichte und Strafpunktfaktoren bestimmen, wie stark ein Befund in den Posture-Score eingeht; die WAN-Interfaces legen fest, was als Internetseite gilt."}));
+  var iName = el("input",{type:"text",id:"m-name",value:m.catalog||""});
+  var iDesc = el("textarea",{id:"m-desc"}); iDesc.value = m.description || "";
+  p.appendChild(field("Katalogname", iName)); p.appendChild(field("Beschreibung", iDesc));
+  var w = el("div",{class:"weights"}), inputs = {};
+  SEV.forEach(function(s){
+    var i = el("input",{type:"number",id:"w-"+s[0],min:"0",max:"100",step:"1",value:String((m.severity_weights||{})[s[0]] || 0)});
+    inputs[s[0]] = i; w.appendChild(field(s[1], i));
+  });
+  p.appendChild(el("div",{class:"f"},[el("label",{text:"Gewichte je Schweregrad"}), w]));
+  var iWan = el("input",{type:"text",id:"m-wan",class:"mono",value:(Array.isArray(m.wan_interfaces)?m.wan_interfaces:["wan"]).join(", ")});
+  p.appendChild(field("WAN-Interfaces", iWan, "Interface-Namen aus der config.xml, die als Internetseite gelten, durch Komma getrennt (z. B. wan, opt2 bei zwei Providern). Wirkt auf alle WAN-bezogenen Prüfungen."));
+  var sc = m.scoring || {}, pen = el("div",{class:"weights"}), pin = {};
+  [["penalty_fail","FAIL",1.0],["penalty_warn","WARN",0.5],["penalty_pass","OK",0.0]].forEach(function(x){
+    var i = el("input",{type:"number",id:"s-"+x[0],min:"0",max:"1",step:"0.1",value:String(typeof sc[x[0]]==="number"?sc[x[0]]:x[2])});
+    pin[x[0]] = i; pen.appendChild(field(x[1], i));
+  });
+  p.appendChild(el("div",{class:"f"},[el("label",{text:"Strafpunktfaktor je Status (Anteil des Gewichts)"}), pen]));
+  if (Array.isArray(m.changelog) && m.changelog.length){
+    var log = el("div",{class:"changes"});
+    m.changelog.slice().reverse().forEach(function(c){
+      log.appendChild(el("div",null,[el("b",{class:"mono",text:c.version}), " "+(c.date||"")+" – "+(c.note||"(ohne Notiz)")]));
+    });
+    p.appendChild(el("div",{class:"f"},[el("label",{text:"Bisherige Versionen"}), log]));
+  }
+  var bOk = el("button",{class:"btn primary",type:"button",text:"Übernehmen"});
+  p.appendChild(el("div",{class:"actions"},[bOk]));
+  bOk.onclick = function(){
+    var sw = {};
+    for (var k in inputs){ var v = Number(inputs[k].value); if (!Number.isFinite(v) || v < 0){ toast("Gewichte müssen Zahlen ≥ 0 sein.", true); return; } sw[k] = v; }
+    var wan = iWan.value.split(",").map(function(x){ return x.trim(); }).filter(Boolean);
+    if (!wan.length){ toast("Mindestens ein WAN-Interface angeben.", true); return; }
+    var ns = {};
+    for (var q in pin){ var f = Number(pin[q].value); if (!Number.isFinite(f) || f < 0 || f > 1){ toast("Strafpunktfaktoren müssen zwischen 0 und 1 liegen.", true); return; } ns[q] = f; }
+    m.catalog = iName.value.trim() || m.catalog; m.description = iDesc.value.trim(); m.severity_weights = sw;
+    m.wan_interfaces = wan; m.scoring = Object.assign({}, m.scoring || {}, ns);
+    renderAll(); toast("Katalog-Einstellungen übernommen.");
+  };
+};
+
+/* ---------- Als neue Version speichern ---------- */
+function bump(v, kind){
+  var p = (v||"0.0.0").split(".").map(function(x){ return parseInt(x,10)||0; }); while (p.length<3) p.push(0);
+  if (kind==="major") return (p[0]+1)+".0.0";
+  if (kind==="minor") return p[0]+"."+(p[1]+1)+".0";
+  return p[0]+"."+p[1]+"."+(p[2]+1);
+}
+function setBump(kind){
+  $("d-ver").value = bump(BASE.meta.version, kind);
+  document.querySelectorAll(".seg button").forEach(function(b){ b.setAttribute("aria-pressed", String(b.dataset.bump===kind)); });
+}
+document.querySelectorAll(".seg button").forEach(function(b){ b.onclick = function(){ setBump(b.dataset.bump); }; });
+
+$("b-save").onclick = function(){
+  var d = diff(), box = $("d-changes"); box.textContent = "";
+  function row(lab, ids){ if (ids.length) box.appendChild(el("div",null,[el("b",{text:lab}), el("span",{class:"mono",text:ids.join(", ")})])); }
+  row("Neu:", d.added); row("Geändert:", d.changed); row("Entfernt:", d.removed);
+  if (d.meta) box.appendChild(el("div",null,[el("b",{text:"Katalog:"}), "Einstellungen geändert"]));
+  if (!box.childNodes.length) box.appendChild(el("div",{text:"Keine inhaltlichen Änderungen gegenüber dem geladenen Stand. Speichern erzeugt trotzdem eine neue Versionsnummer."}));
+  // Vorschlag: neue/entfernte Regeln oder geaenderte Gewichtung -> Minor, sonst Patch
+  var sevChanged = d.changed.some(function(id){ var a=BASE.rules.find(function(x){return x.id===id;}), b=CAT.rules.find(function(x){return x.id===id;}); return a.severity!==b.severity || (a.enabled!==false)!==(b.enabled!==false) || JSON.stringify(a.check)!==JSON.stringify(b.check); });
+  $("d-from").textContent = BASE.meta.version || "?";
+  setBump(d.added.length || d.removed.length || d.meta || sevChanged ? "minor" : "patch");
+  $("d-note").value = ""; $("d-name").value = "rules.js";
+  $("dlg").showModal();
+};
+
+function buildVersion(){
+  var v = $("d-ver").value.trim();
+  if (!/^\d+\.\d+\.\d+$/.test(v)){ toast("Version im Format X.Y.Z angeben.", true); return null; }
+  var d = diff(), out = clone(CAT);
+  out.meta.version = v;
+  var entry = {version:v, date:new Date().toISOString().slice(0,10)};
+  if ($("d-note").value.trim()) entry.note = $("d-note").value.trim();
+  if (d.added.length) entry.added = d.added;
+  if (d.changed.length) entry.changed = d.changed;
+  if (d.removed.length) entry.removed = d.removed;
+  out.meta.changelog = (Array.isArray(out.meta.changelog) ? out.meta.changelog : []).concat([entry]);
+  return out;
+}
+function download(name, text, type){
+  var a = el("a",{href:URL.createObjectURL(new Blob([text],{type:type})), download:name});
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function finish(out){ CAT = out; BASE = clone(out); $("dlg").close(); renderAll(); if (SEL && SEL.charAt(0)!=="_") renderForm(); }
+
+var KATALOG_KOPF = "// Firewall-Validation Portable - Regelkatalog\n// Copyright (C) 2026 Christian Jelitte <christian.jelitte@gmx-topmail.de>\n// SPDX-License-Identifier: GPL-3.0-or-later\n// Zusaetzliche Bedingung nach GPLv3 Abschnitt 7(b) (Urhebernennung): siehe Datei NOTICE.\n";
+$("d-js").onclick = function(){
+  var out = buildVersion(); if (!out) return;
+  var name = $("d-name").value.trim() || "rules.js";
+  download(name, KATALOG_KOPF + "window.RULES_DATA = " + JSON.stringify(out, null, 2) + ";\n", "text/javascript");
+  finish(out); toast("Version "+out.meta.version+" als "+name+" gespeichert.");
+};
+$("d-json").onclick = function(){
+  var out = buildVersion(); if (!out) return;
+  var name = ($("d-name").value.trim() || "rules.js").replace(/\.js$/i, "") + ".json";
+  download(name, JSON.stringify(out, null, 2) + "\n", "application/json");
+  finish(out); toast("Version "+out.meta.version+" als "+name+" gespeichert.");
+};
+
+/* ---------- Start ---------- */
+if (window.RULES_DATA) load(clone(window.RULES_DATA), "rules.js");
+</script>
+</body>
+</html>

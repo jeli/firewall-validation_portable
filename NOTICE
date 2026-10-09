@@ -1,0 +1,45 @@
+Firewall-Validation Portable
+Copyright (C) 2026 Christian Jelitte <christian.jelitte@gmx-topmail.de>
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option)
+any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+more details. The full license text is in the file LICENSE; it is also
+available at <https://www.gnu.org/licenses/gpl-3.0.html>.
+
+
+ADDITIONAL TERM (GNU GPL version 3, section 7, paragraph b)
+
+As permitted by section 7(b) of the GNU General Public License version 3,
+the following additional term applies to this program and to every copy
+and every work based on it, in source or object form:
+
+  1. The copyright and author notice
+       "Firewall-Validation Portable - Copyright (C) 2026 Christian Jelitte"
+     must be preserved in every file that carries it.
+
+  2. The author attribution in the Appropriate Legal Notices displayed by
+     the user interface (the notice at the bottom of index.html and
+     rules-editor.html) must be preserved and must remain reasonably
+     visible to users.
+
+Modified versions must additionally be marked as changed, as required by
+section 5(a) of the License. The author attribution states the origin of
+the program; it must not be presented as an endorsement of a modified
+version by the original author.
+
+
+Deutsche Kurzfassung (nicht verbindlich, maßgeblich ist der englische Text)
+
+Du darfst dieses Programm frei nutzen, weitergeben und verändern, solange
+Weitergaben und veränderte Fassungen wieder unter der GPL-3.0-or-later
+stehen und der Quelltext mitgegeben wird. Zusätzlich gilt nach Abschnitt
+7(b) der GPLv3: Der Urheberhinweis „Firewall-Validation Portable -
+Copyright (C) 2026 Christian Jelitte" muss in den Dateien und im sichtbaren
+Hinweis am unteren Rand von index.html und rules-editor.html erhalten
+bleiben. Veränderte Fassungen müssen als verändert gekennzeichnet sein.
