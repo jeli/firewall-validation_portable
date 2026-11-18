@@ -4,6 +4,10 @@ Ein portabler Security-Auditor für **OPNsense**- und **pfSense**-Firewalls — 
 
 Das Tool prüft eine vom Nutzer selbst exportierte Firewall-Konfiguration (`config.xml`) gegen einen quantifizierten Regelkatalog (34 Regeln, 6 Kategorien), berechnet daraus einen **Posture-Score (0–100)** und eine **Note (A–F)** und erstellt einen lesbaren Auditbericht mit Begründung, Maßnahme und Referenzen für jeden Befund. Beim Laden mehrerer Konfigurationen erscheint zusätzlich ein **Fleet-Dashboard** zur Flottenanalyse.
 
+![Einzelbericht einer schwach konfigurierten OPNsense: Note F mit 9,9 von 100 Punkten, Zählung nach Status und Schweregrad, darunter die Befundübersicht](docs/screenshots/einzelbericht.png)
+
+<sub>Alle Screenshots zeigen fiktive Beispielkonfigurationen (Adressen aus Dokumentations- und privaten Bereichen). Weitere Ansichten: [Detailbefunde](#audit-einzelkonfiguration), [Fleet-Dashboard](#fleet-dashboard-mehrere-konfigurationen), [Regel-Editor](#regelkatalog-bearbeiten-rules-editorhtml).</sub>
+
 ## Features
 
 ### Audit (Einzelkonfiguration)
@@ -24,12 +28,16 @@ Das Tool prüft eine vom Nutzer selbst exportierte Firewall-Konfiguration (`conf
 - **Filter** im Bericht: Offen (FAIL+WARN), nur FAIL, nur WARN, Bestanden, Manuell, N/A, Alle.
 - **Alias-Auflösung:** Host- und Port-Aliase (inkl. verschachtelter Aliase) werden aufgelöst und in Port- und Zielprüfungen einbezogen.
 
+![Detailbefunde mit Filterleiste: je Befund Status, Schweregrad, Regel-ID, konkrete Fundstelle, Begründung, empfohlene Maßnahme und Referenz](docs/screenshots/detailbefunde.png)
+
 ### Fleet-Dashboard (mehrere Konfigurationen)
 - **KPIs:** Ø- und Median-Posture-Score, Geräteanzahl, Geräte mit Handlungsbedarf (Note < B), Geräte mit kritischen/hohen Befunden, offene Befunde gesamt.
 - **Verteilungen:** Notenverteilung (A–F) und Score-Histogramm (10-Punkte-Buckets).
 - **Systemische Befunde:** Häufigste FAIL/WARN-Regeln flottenweit, mit Drill-down („welche Standorte haben diesen Befund?").
 - **Kategorie-Ansicht:** Standorte mit FAIL je Kategorie.
 - **Standort-Tabelle:** sortier- und durchsuchbar, filterbar nach Note, Plattform, „nur kritische", „Handlungsbedarf", mit Pagination; Klick auf ein Gerät öffnet dessen Einzelbericht mit Rückkehr zum Dashboard.
+
+![Fleet-Dashboard über sieben Firewalls: Kennzahlen, Notenverteilung, Score-Histogramm und die flottenweit häufigsten Befunde](docs/screenshots/fleet-dashboard.png)
 
 ### Bedienung & Technik
 - **Drag & Drop** oder Dateiauswahl; mehrere Dateien = Fleet-Modus.
@@ -70,6 +78,7 @@ Note     = A ≥ 90, B ≥ 80, C ≥ 70, D ≥ 60, sonst F
   - `tests/` — optional: Selbsttest der Prüf-Engine und Referenz-Configs (siehe unten)
   - `LICENSE` — Lizenztext (GNU GPL Version 3); `NOTICE` — Urheberhinweis und Zusatzbedingung nach Abschnitt 7(b) (siehe [Lizenz](#lizenz))
   - `site/` und `.github/workflows/pages.yml` — Projektseite für GitHub Pages (siehe [Projektseite](#projektseite-auf-github-pages)); für den Betrieb des Werkzeugs nicht nötig
+  - `docs/screenshots/` — Bilder dieser README; für den Betrieb nicht nötig
   - `HANDBUCH.html` / `HANDBUCH.pdf` — ausführliches Benutzerhandbuch zu `index.html` und Regel-Editor mit annotierten Screenshots (die HTML-Fassung ist eigenständig, Bilder eingebettet; das PDF ist dieselbe Fassung zum Drucken)
 - **Kein Webserver, kein Build, keine weiteren Abhängigkeiten** — das direkte Öffnen der `index.html` vom Dateisystem (`file://`) funktioniert ebenso wie das Hosting auf einem beliebigen statischen Server oder Forge (GitHub Pages, Codeberg Pages).
 - **Die zu prüfende `config.xml` ist NICHT Teil dieses Repositories.** Sie wird vom Nutzer selbst von seiner Firewall exportiert (beliebig viele Geräte):
@@ -77,6 +86,8 @@ Note     = A ≥ 90, B ≥ 80, C ≥ 70, D ≥ 60, sonst F
   - pfSense: *Diagnostics → Backup & Restore*
 
 ## Verwendung
+
+![Startansicht mit Ablagefläche für die config.xml](docs/screenshots/start.png)
 
 1. `index.html` im Browser öffnen (Doppelklick genügt).
 2. Die von der Firewall exportierte `config.xml` per Drag & Drop ablegen oder über „Datei auswählen" laden. Die Datei wird ausschließlich lokal im Browser gelesen.
@@ -114,12 +125,17 @@ Weitere Prüfwerte (z. B. NTP-Port 123, Cipher-Listen, XML-Pfade) stehen direkt 
 
 Der Editor ist wie `index.html` vollständig offline nutzbar (`file://`, keine Abhängigkeiten) und lädt die `rules.js` aus demselben Ordner automatisch. Alternativ lässt sich über „rules.js öffnen …" jede andere Katalogdatei laden (auch eine reine `rules.json`).
 
+![Regel-Editor: links der Katalog nach Kategorien mit Farbbalken für den Schweregrad, rechts das Formular der gewählten Regel](docs/screenshots/regel-editor.png)
+
 - **Anzeigen & suchen:** Regeln nach Kategorie gruppiert, Farbbalken = Schweregrad, deaktivierte Regeln durchgestrichen; Suche über ID, Titel und Kategorie.
 - **Bearbeiten:** Titel, Kategorie, Schweregrad, aktiv/inaktiv, Begründung, Maßnahme, Referenzen (eine pro Zeile) und optionale Parameter (JSON). „Übernehmen" schreibt die Änderung in den Katalog; geänderte und neue Regeln sind in der Liste markiert.
 - **Neue Regeln / Löschen:** Neue Regeln werden am Ende ihrer Kategorie eingefügt. IDs werden auf Format und Eindeutigkeit geprüft.
 - **Katalog-Einstellungen:** Name, Beschreibung, Gewichte je Schweregrad, Strafpunktfaktoren und die WAN-Interfaces (z. B. `wan, opt2` bei zwei Providern).
 - **Parameter:** Zu jeder Regel zeigt der Editor, welche Parameter die Engine tatsächlich liest (fest verdrahtete sowie per `@param:` in der Prüfung verwendete). Die fest verdrahteten werden vor dem Übernehmen auf gültige Werte geprüft.
 - **Prüfung:** Die Prüfdefinition jeder Regel als JSON. Über „Vorlage einfügen …“ gibt es Ausgangspunkte für jeden Prüftyp, „Aufbau prüfen“ meldet Tipp- und Strukturfehler mit genauer Stelle, die aufklappbare **Sprachreferenz** listet alle Quellen, Felder und Operatoren (direkt aus `engine.js` erzeugt). **„Probelauf“** führt die Prüfung – auch ungespeichert – gegen eine geladene `config.xml` aus und zeigt Status, Treffer und Befunde.
+
+  <img src="docs/screenshots/regel-editor-probelauf.png" width="640" alt="Probelauf im Regel-Editor: Die Prüfung von NAT-MGMT-EXPOSED meldet gegen eine pfSense-Test-Config FAIL mit zwei Treffern (SSH und VNC vom WAN weitergeleitet)">
+
 - **Regeln ohne Prüfung** sind in der Liste mit „ohne Prüfung“ gekennzeichnet; sie erscheinen im Bericht als `MANUELL`.
 - **Als neue Version speichern:** Der Dialog zeigt, was sich gegenüber dem geladenen Stand geändert hat, schlägt eine Versionsnummer vor (Minor bei neuen/entfernten Regeln, geänderter Gewichtung oder geänderter Prüfung, sonst Patch) und schreibt einen Eintrag in `meta.changelog`. Heruntergeladen wird eine neue `rules.js` — diese neben `index.html` ablegen und die alte ersetzen. Optional lässt sich derselbe Stand als `rules.json` für das Python-Audit-Tool exportieren. Das Python-Tool wertet das Feld `check` derzeit nicht aus; neue Regeln erscheinen dort als `MANUAL`.
 
